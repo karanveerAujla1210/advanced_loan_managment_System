@@ -1,0 +1,30 @@
+{
+  "name": "business-loan-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm run -s install:ui && npm run -s install:server && npm run -s install:electron",
+    "install:ui": "cd ui && npm install",
+    "install:server": "cd server && npm install",
+    "install:electron": "cd electron && npm install",
+    "dev": "concurrently \"npm:dev:server\" \"npm:dev:ui\"",
+    "dev:all": "concurrently \"npm:dev:server\" \"npm:dev:ui\" \"npm:dev:electron\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:ui": "cd ui && npm run dev",
+    "dev:electron": "cd electron && npm run dev",
+    "build": "npm run -s build:ui && npm run -s build:server && npm run -s build:electron",
+    "build:ui": "cd ui && npm run build",
+    "build:server": "cd server && npm run build || echo 'no build step (js)'",
+    "build:electron": "cd electron && npm run build || echo 'build electron later'",
+    "clean": "rimraf node_modules ui/node_modules server/node_modules electron/node_modules",
+    "db:setup": "node database/setup.js",
+    "db:seed": "node database/seed.js",
+    "db:indexes": "node database/indexes.js",
+    "db:migrate": "node -e \"require('./database/migrate').runMigrations().then(() => process.exit(0)).catch(err => {console.error(err); process.exit(1);})\"",
+    "db:status": "node -e \"require('./database/migrate').getStatus().then(() => process.exit(0)).catch(err => {console.error(err); process.exit(1);})\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "rimraf": "^4.0.0"
+  }
+}

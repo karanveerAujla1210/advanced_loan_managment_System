@@ -1,0 +1,202 @@
+{
+  "branches": [
+    {
+      "code": "",
+      "name": "",
+      "address": "",
+      "city": "",
+      "manager": "",
+      "timezone": "",
+      "createdAt": "",
+      "updatedAt": ""
+    }
+  ],
+  "users": [
+    {
+      "username": "",
+      "passwordHash": "",
+      "displayName": "",
+      "email": "",
+      "phone": "",
+      "role": "",
+      "branch": "",
+      "active": "",
+      "lastLogin": "",
+      "createdAt": ""
+    }
+  ],
+  "borrowers": [
+    {
+      "branch": "",
+      "firstName": "",
+      "lastName": "",
+      "phone": "",
+      "email": "",
+      "dob": "",
+      "gender": "",
+      "address.line1": "",
+      "address.line2": "",
+      "address.city": "",
+      "address.pincode": "",
+      "address.state": "",
+      "kyc.aadhaar.number": "",
+      "kyc.pan.number": "",
+      "bankAccounts.ifsc": "",
+      "bankAccounts.accNumberMasked": "",
+      "riskScore": "",
+      "tags": "",
+      "createdBy": "",
+      "createdAt": "",
+      "updatedAt": ""
+    }
+  ],
+  "loanproducts": [
+    {
+      "name": "",
+      "code": "",
+      "description": "",
+      "interestRate": "",
+      "interestType": "",
+      "defaultTermMonths": "",
+      "frequency": "",
+      "fees.type": "",
+      "fees.amount": "",
+      "fees.percent": "",
+      "active": "",
+      "createdAt": ""
+    }
+  ],
+  "loans": [
+    {
+      "branch": "",
+      "borrower": "",
+      "product": "",
+      "applicationId": "",
+      "principal": "",
+      "processingFee": "",
+      "gstOnProcessingFee": "",
+      "netDisbursed": "",
+      "disbursedAmount": "",
+      "interestType": "",
+      "interestRate": "",
+      "interestTotal": "",
+      "totalPayable": "",
+      "termMonths": "",
+      "termDays": "",
+      "installments": "",
+      "frequencyDays": "",
+      "emi": "",
+      "startDate": "",
+      "status": "",
+      "repaymentFrequency": "",
+      "scheduleGenerated": "",
+      "nextDueDate": "",
+      "outstandingPrincipal": "",
+      "outstandingInterest": "",
+      "charges.bounce": "",
+      "charges.fieldVisit": "",
+      "charges.legal": "",
+      "charges.processing": "",
+      "legal.caseId": "",
+      "legal.status": "",
+      "createdBy": "",
+      "assignedTo": "",
+      "approvedBy": "",
+      "disbursedBy": "",
+      "tags": "",
+      "appliedAt": "",
+      "approvedAt": "",
+      "disbursedAt": "",
+      "closedAt": "",
+      "createdAt": "",
+      "updatedAt": ""
+    }
+  ],
+  "instalments": [
+    {
+      "loan": "",
+      "installmentNo": "",
+      "dueDate": "",
+      "principalDue": "",
+      "interestDue": "",
+      "penaltyDue": "",
+      "totalDue": "",
+      "principalComponent": "",
+      "interestComponent": "",
+      "penaltyComponent": "",
+      "outstandingPrincipal": "",
+      "totalPaid": "",
+      "status": "",
+      "paidAt": "",
+      "overdueDays": "",
+      "lastPenaltyCalculated": "",
+      "createdAt": "",
+      "updatedAt": ""
+    }
+  ],
+  "payments": [
+    {
+      "loan": "",
+      "instalment": "",
+      "borrower": "",
+      "amount": "",
+      "mode": "",
+      "reference": "",
+      "collectedBy": "",
+      "collectedAt": "",
+      "branch": "",
+      "notes": "",
+      "createdAt": ""
+    }
+  ],
+  "leads": [
+    {
+      "branch": "",
+      "source": "",
+      "name": "",
+      "phone": "",
+      "email": "",
+      "status": "",
+      "assignedTo": "",
+      "notes": "",
+      "createdAt": ""
+    }
+  ],
+  "legalcases": [
+    {
+      "loan": "",
+      "borrower": "",
+      "branch": "",
+      "stage": "",
+      "notices.type": "",
+      "notices.date": "",
+      "courtDates.date": "",
+      "courtDates.notes": "",
+      "settlementOffer.amount": "",
+      "settlementOffer.date": "",
+      "createdAt": ""
+    }
+  ],
+  "disbursements": [
+    {
+      "disbursementId": "",
+      "loanId": "",
+      "borrowerId": "",
+      "branchId": "",
+      "disbursementAmount": "",
+      "disbursementDate": "",
+      "disbursementMethod": "",
+      "transactionId": "",
+      "referenceNumber": "",
+      "processingFee": "",
+      "netDisbursementAmount": "",
+      "status": "",
+      "remarks": "",
+      "failureReason": "",
+      "retryCount": "",
+      "lastRetryAt": "",
+      "createdAt": "",
+      "updatedAt": ""
+    }
+  ]
+}

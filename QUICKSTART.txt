@@ -1,0 +1,79 @@
+╔══════════════════════════════════════════════════════════════╗
+║     ADVANCED LOAN MANAGEMENT SYSTEM - QUICK START           ║
+╚══════════════════════════════════════════════════════════════╝
+
+🚀 FASTEST WAY TO START:
+
+1. Double-click: scripts\install.bat
+   (This installs all dependencies)
+
+2. Double-click: scripts\start.bat
+   (This starts both backend and frontend)
+
+3. Open browser: http://localhost:5173
+
+4. Login with:
+   Username: admin
+   Password: admin123
+
+═══════════════════════════════════════════════════════════════
+
+📋 MANUAL START (if scripts don't work):
+
+Terminal 1:
+  cd backend
+  npm install
+  npm run migrate
+  npm run dev
+
+Terminal 2:
+  cd frontend
+  npm install
+  npm run dev
+
+Then open: http://localhost:5173
+
+═══════════════════════════════════════════════════════════════
+
+✅ WHAT'S INCLUDED:
+
+✓ Backend API (Node.js + Express + SQLite)
+✓ Frontend UI (React + Material-UI)
+✓ Authentication & Authorization
+✓ Borrower Management
+✓ Loan Management with EMI Calculation
+✓ Payment Processing & Allocation
+✓ Loan Products Configuration
+✓ Dashboard with Statistics
+
+═══════════════════════════════════════════════════════════════
+
+📁 KEY FILES:
+
+- README.md          → Full documentation
+- SETUP.md           → Detailed setup guide
+- COMPONENTS_INSTALLED.md → What was installed
+- backend/.env       → Backend configuration
+- database/schema.sql → Database structure
+
+═══════════════════════════════════════════════════════════════
+
+🔧 TROUBLESHOOTING:
+
+Problem: Port already in use
+Solution: Change PORT in backend/.env
+
+Problem: Database error
+Solution: Delete database/loan_management.db and run:
+         cd backend && npm run migrate
+
+Problem: Module not found
+Solution: Run npm install in root, backend, and frontend
+
+═══════════════════════════════════════════════════════════════
+
+📞 NEED HELP?
+
+Check SETUP.md for detailed instructions and troubleshooting.
+
+═══════════════════════════════════════════════════════════════

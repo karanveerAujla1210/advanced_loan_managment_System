@@ -1,0 +1,94 @@
+require('dotenv').config();
+const mongoose = require('mongoose');
+const fs = require('fs');
+const path = require('path');
+const Instalment = require('./src/models/Instalment');
+
+function parseDate(dateStr) {
+  const parts = dateStr.split('/');
+  return new Date(parts[2], parts[0] - 1, parts[1]);
+}
+
+async function generateRepaymentSchedules() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('✅ Connected to MongoDB');
+
+    await Instalment.deleteMany({});
+    console.log('🗑️  Cleared existing instalments');
+
+    const dataPath = path.join(__dirname, '..', 'Data', 'Disbursement Data.json');
+    const rawData = fs.readFileSync(dataPath, 'utf8');
+    const fixedData = '[' + rawData.trim() + ']';
+    const disbursements = JSON.parse(fixedData);
+
+    console.log(`📊 Generating schedules based on Net Disbursement amounts`);
+
+    let totalSchedules = 0;
+    let processedLoans = 0;
+
+    for (const record of disbursements) {
+      try {
+        // Use Net Disbursement as the repayment base amount
+        const repaymentAmount = record['Net Disbursement'];
+        const monthlyRate = 24 / (12 * 100); // 24% annual
+        const tenure = 14;
+        
+        // Calculate EMI on Net Disbursement
+        const emi = Math.round((repaymentAmount * monthlyRate * Math.pow(1 + monthlyRate, tenure)) / (Math.pow(1 + monthlyRate, tenure) - 1));
+        
+        let balance = repaymentAmount;
+        let currentDate = parseDate(record['Date of Disbursement']);
+        const loanId = new mongoose.Types.ObjectId();
+        const schedules = [];
+
+        for (let j = 1; j <= tenure; j++) {
+          const interestAmount = Math.round(balance * monthlyRate);
+          const principalAmount = emi - interestAmount;
+          balance = Math.max(0, balance - principalAmount);
+          
+          schedules.push({
+            loan: loanId,
+            installmentNo: j,
+            dueDate: new Date(currentDate),
+            principalDue: principalAmount,
+            interestDue: interestAmount,
+            totalDue: emi,
+            principalComponent: principalAmount,
+            interestComponent: interestAmount,
+            outstandingPrincipal: balance,
+            status: 'pending'
+          });
+          
+          currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+
+        await Instalment.insertMany(schedules);
+        totalSchedules += schedules.length;
+        processedLoans++;
+
+        if (processedLoans % 200 === 0) {
+          console.log(`📈 Processed ${processedLoans} loans...`);
+        }
+
+      } catch (error) {
+        console.error(`❌ Error processing ${record['Unique ID']}:`, error.message);
+      }
+    }
+
+    console.log(`\n🎉 REPAYMENT SCHEDULES GENERATED!`);
+    console.log(`✅ Loans Processed: ${processedLoans}`);
+    console.log(`📊 Total Instalments: ${totalSchedules}`);
+    console.log(`💰 Based on: Net Disbursement amounts`);
+    console.log(`📅 Tenure: 14 months each`);
+    console.log(`💸 Interest: 24% annual reducing balance`);
+
+  } catch (error) {
+    console.error('❌ Generation failed:', error.message);
+  } finally {
+    await mongoose.disconnect();
+    console.log('🔌 Disconnected from MongoDB');
+  }
+}
+
+generateRepaymentSchedules();
