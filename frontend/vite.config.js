@@ -5,5 +5,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173
+  },
+  optimizeDeps: {
+    include: ["@mui/material", "@mui/icons-material", "@mui/system"]
   }
 });
