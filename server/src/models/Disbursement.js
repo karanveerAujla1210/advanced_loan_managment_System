@@ -1,88 +1,180 @@
-const mongoose = require("mongoose");
-const { Schema } = mongoose;
+const mongoose = require('mongoose');
 
-const BankDetailsSchema = new Schema(
-  {
-    accountNumber: String,
-    ifscCode: String,
-    bankName: String,
-    accountHolderName: String
-  },
-  { _id: false }
-);
-
-const ChequeDetailsSchema = new Schema(
-  {
-    chequeNumber: String,
-    bankName: String,
-    chequeDate: Date
-  },
-  { _id: false }
-);
-
-const DisbursementDocumentSchema = new Schema(
-  {
+const disbursementSchema = new mongoose.Schema({
+  uniqueId: {
     type: String,
-    url: String,
-    uploadedAt: { type: Date, default: Date.now }
+    required: true,
+    unique: true,
+    trim: true
   },
-  { _id: false }
-);
-
-const DisbursementSchema = new Schema(
-  {
-    disbursementId: { type: String, unique: true, required: true },
-
-    loanId: { type: Schema.Types.ObjectId, ref: "Loan", required: true },
-    borrowerId: { type: Schema.Types.ObjectId, ref: "Borrower", required: true },
-    branchId: { type: Schema.Types.ObjectId, ref: "Branch", required: true },
-
-    disbursementAmount: { type: Number, required: true },
-    disbursementDate: { type: Date, default: Date.now },
-
-    disbursementMethod: {
-      type: String,
-      enum: ["CASH", "CHEQUE", "BANK_TRANSFER", "UPI", "NEFT", "RTGS"]
-    },
-
-    bankDetails: BankDetailsSchema,
-    chequeDetails: ChequeDetailsSchema,
-
-    disbursedBy: { type: Schema.Types.ObjectId, ref: "User" },
-    approvedBy: { type: Schema.Types.ObjectId, ref: "User" },
-
-    status: {
-      type: String,
-      enum: ["PENDING", "PROCESSING", "COMPLETED", "FAILED", "CANCELLED"],
-      default: "PENDING"
-    },
-
-    transactionId: String,
-    referenceNumber: String,
-
-    processingFee: { type: Number, default: 0 },
-    netDisbursementAmount: { type: Number, default: 0 },
-
-    remarks: String,
-
-    documents: [DisbursementDocumentSchema],
-
-    failureReason: String,
-    retryCount: { type: Number, default: 0 },
-    lastRetryAt: Date,
-
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
+  loanId: {
+    type: String,
+    required: true,
+    trim: true
   },
-  { minimize: false }
-);
+  branch: {
+    type: String,
+    required: true,
+    trim: true,
+    uppercase: true
+  },
+  status: {
+    type: String,
+    required: true,
+    enum: ['ACTIVE', 'CLOSED', 'PENDING', 'CANCELLED'],
+    default: 'ACTIVE'
+  },
+  type: {
+    type: String,
+    required: true,
+    enum: ['Fresh', 'Top-up', 'Renewal'],
+    default: 'Fresh'
+  },
+  dateOfDisbursement: {
+    type: Date,
+    required: true
+  },
+  customerName: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  mobileNumber: {
+    type: Number,
+    required: true,
+    validate: {
+      validator: function(v) {
+        return /^\d{10}$/.test(v.toString());
+      },
+      message: 'Mobile number must be 10 digits'
+    }
+  },
+  loanAmount: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  processingFees: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  gst: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  netDisbursement: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  utr: {
+    type: String,
+    trim: true,
+    sparse: true // Allows multiple null values
+  }
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
 
-// Indexes
-DisbursementSchema.index({ disbursementId: 1 }, { unique: true });
-DisbursementSchema.index({ loanId: 1 });
-DisbursementSchema.index({ borrowerId: 1 });
-DisbursementSchema.index({ disbursementDate: 1 });
-DisbursementSchema.index({ status: 1 });
-DisbursementSchema.index({ disbursedBy: 1 });
+// Indexes for better query performance
+disbursementSchema.index({ uniqueId: 1 });
+disbursementSchema.index({ loanId: 1 });
+disbursementSchema.index({ branch: 1 });
+disbursementSchema.index({ dateOfDisbursement: -1 });
+disbursementSchema.index({ customerName: 1 });
+disbursementSchema.index({ mobileNumber: 1 });
 
-module.exports = mongoose.model("Disbursement", DisbursementSchema);
+// Virtual for formatted disbursement date
+disbursementSchema.virtual('formattedDate').get(function() {
+  return this.dateOfDisbursement.toLocaleDateString('en-IN');
+});
+
+// Virtual for formatted amounts
+disbursementSchema.virtual('formattedLoanAmount').get(function() {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR'
+  }).format(this.loanAmount);
+});
+
+disbursementSchema.virtual('formattedNetDisbursement').get(function() {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR'
+  }).format(this.netDisbursement);
+});
+
+// Static method to get disbursement statistics
+disbursementSchema.statics.getStatistics = async function() {
+  const stats = await this.aggregate([
+    {
+      $group: {
+        _id: null,
+        totalDisbursements: { $sum: 1 },
+        totalLoanAmount: { $sum: '$loanAmount' },
+        totalNetDisbursement: { $sum: '$netDisbursement' },
+        totalProcessingFees: { $sum: '$processingFees' },
+        totalGST: { $sum: '$gst' },
+        avgLoanAmount: { $avg: '$loanAmount' },
+        minLoanAmount: { $min: '$loanAmount' },
+        maxLoanAmount: { $max: '$loanAmount' }
+      }
+    }
+  ]);
+
+  return stats[0] || {};
+};
+
+// Static method to get branch-wise statistics
+disbursementSchema.statics.getBranchStatistics = async function() {
+  return await this.aggregate([
+    {
+      $group: {
+        _id: '$branch',
+        count: { $sum: 1 },
+        totalLoanAmount: { $sum: '$loanAmount' },
+        totalNetDisbursement: { $sum: '$netDisbursement' },
+        avgLoanAmount: { $avg: '$loanAmount' }
+      }
+    },
+    {
+      $sort: { totalLoanAmount: -1 }
+    }
+  ]);
+};
+
+// Static method to get monthly disbursement trends
+disbursementSchema.statics.getMonthlyTrends = async function() {
+  return await this.aggregate([
+    {
+      $group: {
+        _id: {
+          year: { $year: '$dateOfDisbursement' },
+          month: { $month: '$dateOfDisbursement' }
+        },
+        count: { $sum: 1 },
+        totalAmount: { $sum: '$loanAmount' },
+        totalNetDisbursement: { $sum: '$netDisbursement' }
+      }
+    },
+    {
+      $sort: { '_id.year': -1, '_id.month': -1 }
+    }
+  ]);
+};
+
+// Pre-save middleware to calculate net disbursement if not provided
+disbursementSchema.pre('save', function(next) {
+  if (!this.netDisbursement) {
+    this.netDisbursement = this.loanAmount - this.processingFees - this.gst;
+  }
+  next();
+});
+
+const Disbursement = mongoose.model('Disbursement', disbursementSchema);
+
+module.exports = Disbursement;

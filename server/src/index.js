@@ -34,6 +34,9 @@ app.use('/api/disbursement', require('./routes/disbursement.routes'));
 app.use('/api/import', require('./routes/import.routes'));
 app.use('/api/loan-engine', require('./routes/loanEngine.routes'));
 
+// Enhanced API routes with RBAC
+app.use('/api', require('./routes/api.routes'));
+
 // Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);

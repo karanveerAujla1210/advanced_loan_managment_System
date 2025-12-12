@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus, Search, Filter, Eye, Check, X, Clock } from 'lucide-react';
-import api from '../../services/api';
+import api, { getLoans } from '../../services/api';
 
 export default function LoanApplications() {
   const [loans, setLoans] = useState([]);
@@ -20,12 +20,7 @@ export default function LoanApplications() {
 
   const fetchLoans = async () => {
     try {
-      const params = new URLSearchParams();
-      if (filters.status) params.append('status', filters.status);
-      if (filters.branch) params.append('branch', filters.branch);
-      if (filters.search) params.append('search', filters.search);
-      
-      const response = await api.get(`/loans?${params}`);
+      const response = await getLoans();
       setLoans(response.data);
     } catch (error) {
       console.error('Error fetching loans:', error);
@@ -179,7 +174,7 @@ export default function LoanApplications() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan ID</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Borrower</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applied Date</th>
@@ -199,15 +194,15 @@ export default function LoanApplications() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <div>
-                      <div className="font-medium">{loan.borrower?.name}</div>
-                      <div className="text-gray-500">{loan.borrower?.phone}</div>
+                      <div className="font-medium">{loan.customerName}</div>
+                      <div className="text-gray-500">{loan.mobileNumber}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {loan.loanProduct?.name}
+                    {loan.branch}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₹{loan.principal?.toLocaleString()}
+                    ₹{loan.loanAmount?.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(loan.status)}`}>
@@ -215,7 +210,7 @@ export default function LoanApplications() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(loan.createdAt).toLocaleDateString()}
+                    {new Date(loan.dateOfDisbursement).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
@@ -225,22 +220,6 @@ export default function LoanApplications() {
                       >
                         View
                       </button>
-                      {loan.status === 'PENDING' && (
-                        <>
-                          <button
-                            onClick={() => handleStatusUpdate(loan._id, 'APPROVED')}
-                            className="text-green-600 hover:text-green-900"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleStatusUpdate(loan._id, 'REJECTED')}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Reject
-                          </button>
-                        </>
-                      )}
                     </div>
                   </td>
                 </motion.tr>

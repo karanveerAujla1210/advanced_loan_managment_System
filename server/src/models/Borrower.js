@@ -1,80 +1,50 @@
-const mongoose = require("mongoose");
-const { Schema } = mongoose;
+const mongoose = require('mongoose');
 
-const AddressSchema = new Schema(
-  {
-    line1: String,
-    line2: String,
-    city: String,
-    pincode: String,
-    state: String
+const borrowerSchema = new mongoose.Schema({
+  customerId: { type: String, required: true, unique: true },
+  personalInfo: {
+    firstName: { type: String, required: true },
+    lastName: { type: String, required: true },
+    fatherName: String,
+    dateOfBirth: Date,
+    gender: { type: String, enum: ['MALE', 'FEMALE', 'OTHER'] },
+    maritalStatus: { type: String, enum: ['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED'] }
   },
-  { _id: false }
-);
-
-const KycDocSchema = new Schema(
-  {
-    number: String,
-    status: String,
-    fileRef: String
+  contact: {
+    phone: { type: String, required: true },
+    alternatePhone: String,
+    email: String,
+    address: {
+      street: String,
+      city: String,
+      state: String,
+      pincode: String
+    }
   },
-  { _id: false }
-);
-
-const OtherDocSchema = new Schema(
-  {
-    type: String,
-    fileRef: String,
-    uploadedAt: { type: Date, default: Date.now }
+  kyc: {
+    aadharNumber: String,
+    panNumber: String,
+    documents: [{
+      type: String,
+      url: String,
+      uploadedAt: Date
+    }]
   },
-  { _id: false }
-);
-
-const BankAccountSchema = new Schema(
-  {
-    ifsc: String,
-    accNumberMasked: String,
-    verified: { type: Boolean, default: false }
+  financial: {
+    monthlyIncome: Number,
+    occupation: String,
+    employer: String,
+    bankAccount: {
+      accountNumber: String,
+      ifscCode: String,
+      bankName: String
+    }
   },
-  { _id: false }
-);
+  branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', required: true },
+  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  status: { type: String, enum: ['ACTIVE', 'INACTIVE', 'BLACKLISTED'], default: 'ACTIVE' },
+  creditScore: Number,
+  notes: [{ text: String, createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, createdAt: Date }]
+}, { timestamps: true });
 
-const BorrowerSchema = new Schema(
-  {
-    branch: { type: Schema.Types.ObjectId, ref: "Branch", required: true },
-
-    firstName: { type: String, required: true, trim: true },
-    lastName: { type: String, trim: true },
-
-    phone: { type: String, unique: true, required: true, trim: true },
-    email: { type: String, trim: true },
-
-    dob: { type: Date },
-    gender: { type: String }, // optional enum later
-
-    address: AddressSchema,
-
-    kyc: {
-      aadhaar: KycDocSchema,
-      pan: KycDocSchema,
-      otherDocs: [OtherDocSchema]
-    },
-
-    bankAccounts: [BankAccountSchema],
-
-    riskScore: { type: Number, default: 0 },
-    tags: [{ type: String, trim: true }],
-
-    createdBy: { type: Schema.Types.ObjectId, ref: "User" },
-
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
-  },
-  { minimize: false }
-);
-
-// Indexes
-BorrowerSchema.index({ phone: 1 }, { unique: true });
-BorrowerSchema.index({ branch: 1 });
-
-module.exports = mongoose.model("Borrower", BorrowerSchema);
+module.exports = mongoose.model('Borrower', borrowerSchema);

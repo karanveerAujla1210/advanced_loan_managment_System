@@ -6,6 +6,7 @@ import api from "../../services/api";
 export default function AdminDashboard() {
   const [kpis, setKpis] = useState({});
   const [recentLoans, setRecentLoans] = useState([]);
+  const [recentDisbursements, setRecentDisbursements] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,12 +15,13 @@ export default function AdminDashboard() {
 
   async function fetchDashboardData() {
     try {
-      const [kpiRes, loansRes] = await Promise.all([
+      const [kpiRes, activitiesRes] = await Promise.all([
         api.get("/dashboard/kpis"),
-        api.get("/loans/recent")
+        api.get("/dashboard/activities")
       ]);
       setKpis(kpiRes.data);
-      setRecentLoans(loansRes.data);
+      setRecentLoans(activitiesRes.data.recentLoans || []);
+      setRecentDisbursements(activitiesRes.data.recentDisbursements || []);
     } catch (error) {
       console.error("Dashboard fetch error:", error);
     } finally {
@@ -47,13 +49,21 @@ export default function AdminDashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <DashboardCard
-          title="Total Outstanding"
-          value={kpis.totalOutstanding || "₹ 0"}
-          delta={kpis.outstandingGrowth}
+          title="Total Disbursements"
+          value={`₹${(kpis.totalDisbursementAmount || 0).toLocaleString()}`}
+          icon="💸"
+          loading={loading}
+        >
+          {kpis.totalDisbursements || 0} loans disbursed
+        </DashboardCard>
+
+        <DashboardCard
+          title="Net Disbursement"
+          value={`₹${(kpis.totalNetDisbursement || 0).toLocaleString()}`}
           icon="💰"
           loading={loading}
         >
-          Across {kpis.activeLoans || 0} active loans
+          After fees & charges
         </DashboardCard>
 
         <DashboardCard
@@ -63,27 +73,16 @@ export default function AdminDashboard() {
           icon="📋"
           loading={loading}
         >
-          {kpis.newLoansThisMonth || 0} new this month
+          {kpis.todayDisbursements || 0} disbursed today
         </DashboardCard>
 
         <DashboardCard
-          title="Collection Rate"
-          value={`${kpis.collectionRate || 0}%`}
-          delta={kpis.collectionDelta}
-          icon="📈"
+          title="Processing Fees"
+          value={`₹${(kpis.totalProcessingFees || 0).toLocaleString()}`}
+          icon="📊"
           loading={loading}
         >
-          This month vs last month
-        </DashboardCard>
-
-        <DashboardCard
-          title="Overdue Amount"
-          value={kpis.overdueAmount || "₹ 0"}
-          delta={kpis.overdueDelta}
-          icon="⚠️"
-          loading={loading}
-        >
-          {kpis.overdueCount || 0} overdue accounts
+          Total fees collected
         </DashboardCard>
       </div>
 
@@ -104,17 +103,17 @@ export default function AdminDashboard() {
                   </div>
                 ))}
               </div>
-            ) : recentLoans.length > 0 ? (
+            ) : recentDisbursements.length > 0 ? (
               <div className="space-y-3">
-                {recentLoans.slice(0, 5).map(loan => (
-                  <div key={loan._id} className="flex justify-between items-center">
+                {recentDisbursements.slice(0, 5).map(disbursement => (
+                  <div key={disbursement.id} className="flex justify-between items-center">
                     <div>
-                      <div className="font-medium">{loan.borrower?.firstName} {loan.borrower?.lastName}</div>
-                      <div className="text-sm text-gray-500">Loan #{loan.loanNumber}</div>
+                      <div className="font-medium">{disbursement.customerName}</div>
+                      <div className="text-sm text-gray-500">{disbursement.loanId} • {disbursement.branch}</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium">₹ {loan.principalAmount?.toLocaleString()}</div>
-                      <div className="text-sm text-gray-500">{new Date(loan.createdAt).toLocaleDateString()}</div>
+                      <div className="font-medium">₹ {disbursement.loanAmount?.toLocaleString()}</div>
+                      <div className="text-sm text-gray-500">{new Date(disbursement.date).toLocaleDateString()}</div>
                     </div>
                   </div>
                 ))}

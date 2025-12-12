@@ -27,6 +27,15 @@ router.use(authenticate);
 
 // Routes
 router.post('/', rolesMiddleware(['COUNSELLOR', 'ADVISOR', 'MANAGER', 'ADMIN']), loanValidation, validate, loansController.create);
+router.get('/all', async (req, res) => {
+  try {
+    const Disbursement = require('../models/Disbursement');
+    const disbursements = await Disbursement.find({});
+    res.json(disbursements);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 router.get('/', loansController.list);
 router.get('/:id', loansController.getById);
 router.put('/:id', rolesMiddleware(['COUNSELLOR', 'ADVISOR', 'MANAGER', 'ADMIN']), loanValidation, validate, loansController.update);

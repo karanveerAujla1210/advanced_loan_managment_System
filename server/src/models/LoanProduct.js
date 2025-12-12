@@ -1,37 +1,29 @@
-const mongoose = require("mongoose");
-const { Schema } = mongoose;
+const mongoose = require('mongoose');
+const { FREQUENCY } = require('../config/constants');
 
-const FeeSchema = new Schema(
-  {
-    type: String,    // processing, insurance, late
-    amount: Number,
-    percent: Number
+const loanProductSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  code: { type: String, required: true, unique: true },
+  description: String,
+  minAmount: { type: Number, required: true },
+  maxAmount: { type: Number, required: true },
+  interestRate: { type: Number, required: true }, // Annual percentage
+  processingFee: { type: Number, default: 0 },
+  processingFeeType: { type: String, enum: ['FIXED', 'PERCENTAGE'], default: 'PERCENTAGE' },
+  tenure: {
+    min: Number, // in months
+    max: Number
   },
-  { _id: false }
-);
+  repaymentFrequency: { type: String, enum: Object.values(FREQUENCY), default: 'MONTHLY' },
+  gracePeriod: { type: Number, default: 0 }, // days
+  penaltyRate: { type: Number, default: 2 }, // percentage per month
+  isActive: { type: Boolean, default: true },
+  eligibilityCriteria: {
+    minAge: Number,
+    maxAge: Number,
+    minIncome: Number,
+    requiredDocuments: [String]
+  }
+}, { timestamps: true });
 
-const LoanProductSchema = new Schema(
-  {
-    name: { type: String, required: true, trim: true },
-    code: { type: String, unique: true, required: true, trim: true },
-    description: { type: String },
-
-    interestRate: { type: Number, required: true }, // interpret based on interestType
-    interestType: { type: String, enum: ["flat", "reducing"], required: true },
-
-    defaultTermMonths: { type: Number },
-    frequency: { type: String, enum: ["monthly", "weekly", "daily"] },
-
-    fees: [FeeSchema],
-
-    active: { type: Boolean, default: true },
-
-    createdAt: { type: Date, default: Date.now }
-  },
-  { minimize: false }
-);
-
-// Index
-LoanProductSchema.index({ code: 1 }, { unique: true });
-
-module.exports = mongoose.model("LoanProduct", LoanProductSchema);
+module.exports = mongoose.model('LoanProduct', loanProductSchema);

@@ -1,20 +1,20 @@
-const mongoose = require("mongoose");
-const { Schema } = mongoose;
+const mongoose = require('mongoose');
 
-const BranchSchema = new Schema(
-  {
-    code: { type: String, unique: true, required: true, trim: true },
-    name: { type: String, required: true, trim: true },
-    address: { type: String, trim: true },
-    city: { type: String, trim: true },
-    manager: { type: Schema.Types.ObjectId, ref: "User" },
-    timezone: { type: String, default: "Asia/Kolkata" }
+const branchSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  code: { type: String, required: true, unique: true },
+  address: {
+    street: String,
+    city: String,
+    state: String,
+    pincode: String
   },
-  { timestamps: true }
-);
+  contact: {
+    phone: String,
+    email: String
+  },
+  manager: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  isActive: { type: Boolean, default: true }
+}, { timestamps: true });
 
-// Indexes
-BranchSchema.index({ code: 1 }, { unique: true });
-BranchSchema.index({ manager: 1 });
-
-module.exports = mongoose.model("Branch", BranchSchema);
+module.exports = mongoose.model('Branch', branchSchema);

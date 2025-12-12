@@ -12,4 +12,7 @@ router.get('/activities', authenticateToken, dashboardController.getRecentActivi
 // Get portfolio distribution
 router.get('/distribution', authenticateToken, dashboardController.getPortfolioDistribution);
 
+// Get disbursement statistics
+router.get('/disbursements', authenticateToken, dashboardController.getDisbursementStats);
+
 module.exports = router;

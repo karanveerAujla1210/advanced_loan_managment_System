@@ -2,6 +2,7 @@ const Loan = require('../models/Loan');
 const Borrower = require('../models/Borrower');
 const Payment = require('../models/Payment');
 const Branch = require('../models/Branch');
+const Disbursement = require('../models/Disbursement');
 
 // Get dashboard KPIs
 exports.getDashboardKPIs = async (req, res) => {
@@ -55,6 +56,27 @@ exports.getDashboardKPIs = async (req, res) => {
     // NPA loans (90+ DPD)
     const npaLoans = await Loan.countDocuments({ ...filter, status: 'ACTIVE', dpd: { $gte: 90 } });
 
+    // Disbursement statistics
+    const disbursementFilter = branch ? { branch: branch.toUpperCase() } : {};
+    const totalDisbursements = await Disbursement.countDocuments(disbursementFilter);
+    
+    const disbursementStats = await Disbursement.aggregate([
+      { $match: disbursementFilter },
+      { 
+        $group: { 
+          _id: null, 
+          totalAmount: { $sum: '$loanAmount' },
+          totalNetDisbursement: { $sum: '$netDisbursement' },
+          totalProcessingFees: { $sum: '$processingFees' }
+        } 
+      }
+    ]);
+    
+    const todayDisbursements = await Disbursement.countDocuments({
+      ...disbursementFilter,
+      dateOfDisbursement: { $gte: today, $lt: tomorrow }
+    });
+
     res.json({
       totalLoans,
       activeLoans,
@@ -64,7 +86,13 @@ exports.getDashboardKPIs = async (req, res) => {
       collectionsToday,
       pendingDisbursements,
       npaLoans,
-      parPercentage: activeLoans ? ((overdueLoans / activeLoans) * 100).toFixed(2) : 0
+      parPercentage: activeLoans ? ((overdueLoans / activeLoans) * 100).toFixed(2) : 0,
+      // Disbursement KPIs
+      totalDisbursements,
+      totalDisbursementAmount: disbursementStats[0]?.totalAmount || 0,
+      totalNetDisbursement: disbursementStats[0]?.totalNetDisbursement || 0,
+      totalProcessingFees: disbursementStats[0]?.totalProcessingFees || 0,
+      todayDisbursements
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -91,6 +119,12 @@ exports.getRecentActivities = async (req, res) => {
       .sort({ paymentDate: -1 })
       .limit(5);
 
+    // Recent disbursements
+    const disbursementFilter = branch ? { branch: branch.toUpperCase() } : {};
+    const recentDisbursements = await Disbursement.find(disbursementFilter)
+      .sort({ dateOfDisbursement: -1 })
+      .limit(5);
+
     res.json({
       recentLoans: recentLoans.map(loan => ({
         id: loan._id,
@@ -108,6 +142,17 @@ exports.getRecentActivities = async (req, res) => {
         amount: payment.amount,
         mode: payment.paymentMode,
         date: payment.paymentDate
+      })),
+      recentDisbursements: recentDisbursements.map(disbursement => ({
+        id: disbursement._id,
+        uniqueId: disbursement.uniqueId,
+        loanId: disbursement.loanId,
+        customerName: disbursement.customerName,
+        loanAmount: disbursement.loanAmount,
+        netDisbursement: disbursement.netDisbursement,
+        branch: disbursement.branch,
+        date: disbursement.dateOfDisbursement,
+        utr: disbursement.utr
       }))
     });
   } catch (error) {
@@ -155,6 +200,54 @@ exports.getPortfolioDistribution = async (req, res) => {
     });
 
     res.json(buckets);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get disbursement statistics
+exports.getDisbursementStats = async (req, res) => {
+  try {
+    const { branch } = req.query;
+    const filter = branch ? { branch: branch.toUpperCase() } : {};
+
+    // Branch-wise disbursement stats
+    const branchStats = await Disbursement.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: '$branch',
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$loanAmount' },
+          totalNetDisbursement: { $sum: '$netDisbursement' },
+          avgAmount: { $avg: '$loanAmount' }
+        }
+      },
+      { $sort: { totalAmount: -1 } }
+    ]);
+
+    // Monthly disbursement trends
+    const monthlyTrends = await Disbursement.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$dateOfDisbursement' },
+            month: { $month: '$dateOfDisbursement' }
+          },
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$loanAmount' },
+          totalNetDisbursement: { $sum: '$netDisbursement' }
+        }
+      },
+      { $sort: { '_id.year': -1, '_id.month': -1 } },
+      { $limit: 12 }
+    ]);
+
+    res.json({
+      branchStats,
+      monthlyTrends
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -1,33 +1,31 @@
-const mongoose = require("mongoose");
-const { Schema } = mongoose;
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const { USER_ROLES } = require('../config/constants');
 
-const UserSchema = new Schema(
-  {
-    username: { type: String, unique: true, required: true, trim: true },
-    passwordHash: { type: String, required: true },
-    displayName: { type: String, trim: true },
-    email: { type: String, trim: true },
-    phone: { type: String, trim: true },
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
+  role: { type: String, enum: Object.values(USER_ROLES), required: true },
+  branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch' },
+  isActive: { type: Boolean, default: true },
+  lastLogin: Date,
+  permissions: [{
+    module: String,
+    actions: [String]
+  }]
+}, { timestamps: true });
 
-    role: {
-      type: String,
-      enum: ["ADMIN", "MANAGER", "COUNSELLOR", "ADVISOR", "OPERATION", "COLLECTION", "LEGAL"],
-      required: true
-    },
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
 
-    branch: { type: Schema.Types.ObjectId, ref: "Branch" },
+userSchema.methods.comparePassword = async function(password) {
+  return bcrypt.compare(password, this.password);
+};
 
-    active: { type: Boolean, default: true },
-    lastLogin: { type: Date },
-
-    createdAt: { type: Date, default: Date.now }
-  },
-  { minimize: false }
-);
-
-// Indexes
-UserSchema.index({ username: 1 }, { unique: true });
-UserSchema.index({ role: 1 });
-UserSchema.index({ branch: 1 });
-
-module.exports = mongoose.model("User", UserSchema);
+module.exports = mongoose.model('User', userSchema);

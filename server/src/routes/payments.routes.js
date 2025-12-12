@@ -1,12 +1,15 @@
-// server/src/routes/payments.routes.js
 const express = require('express');
-const { createPayment, recordBounce } = require('../controllers/payments.controller');
-const { authenticate } = require('../middlewares/auth.middleware');
+const router = express.Router();
+const paymentsController = require('../controllers/payments.controller');
+const { authenticateToken } = require('../middlewares/auth.middleware');
 const rolesMiddleware = require('../middlewares/roles.middleware');
 
-const router = express.Router();
+// Apply auth middleware to all routes
+router.use(authenticateToken);
+router.use(rolesMiddleware(['ADMIN', 'MANAGER', 'COLLECTION', 'OPERATION']));
 
-router.post('/', authenticate, rolesMiddleware(['COLLECTION', 'OPERATION', 'MANAGER', 'ADMIN']), createPayment);
-router.post('/bounce', authenticate, rolesMiddleware(['COLLECTION', 'OPERATION', 'MANAGER', 'ADMIN']), recordBounce);
+// Payment routes
+router.post('/', paymentsController.addPayment);
+router.get('/loan/:loanId', paymentsController.getPaymentHistory);
 
 module.exports = router;

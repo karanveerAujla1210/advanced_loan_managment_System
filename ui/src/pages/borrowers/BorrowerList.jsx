@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Plus, Filter, MoreVertical, Upload } from 'lucide-react';
 import ImportModal from '../../components/import/ImportModal';
 import ExportButton from '../../components/import/ExportButton';
+import CustomerForm from '../../components/forms/CustomerForm';
 import api from '../../services/api';
 
 const BorrowerList = () => {
@@ -9,6 +10,7 @@ const BorrowerList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [filters, setFilters] = useState({
     branch: '',
     status: ''
@@ -63,7 +65,10 @@ const BorrowerList = () => {
             Import
           </button>
           <ExportButton type="borrowers" filters={filters} />
-          <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center">
+          <button 
+            onClick={() => setShowCustomerForm(true)}
+            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center"
+          >
             <Plus size={16} className="mr-2" />
             Add Borrower
           </button>
@@ -194,6 +199,21 @@ const BorrowerList = () => {
           </div>
         )}
       </div>
+
+      {/* Customer Form Modal */}
+      {showCustomerForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <CustomerForm
+              onSuccess={() => {
+                setShowCustomerForm(false);
+                fetchBorrowers();
+              }}
+              onCancel={() => setShowCustomerForm(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Import Modal */}
       <ImportModal

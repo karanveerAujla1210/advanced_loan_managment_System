@@ -1,62 +1,27 @@
-const mongoose = require("mongoose");
-const { Schema } = mongoose;
+const mongoose = require('mongoose');
+const { PAYMENT_STATUS } = require('../config/constants');
 
-const InstalmentChargeSchema = new Schema(
-  {
-    type: String, // bounce, field_visit, penalty_payment
-    amount: Number,
-    date: Date,
-    description: String
-  },
-  { _id: false }
-);
+const instalmentSchema = new mongoose.Schema({
+  loan: { type: mongoose.Schema.Types.ObjectId, ref: 'Loan', required: true },
+  instalmentNumber: { type: Number, required: true },
+  dueDate: { type: Date, required: true },
+  principalAmount: { type: Number, required: true },
+  interestAmount: { type: Number, required: true },
+  totalAmount: { type: Number, required: true },
+  paidAmount: { type: Number, default: 0 },
+  paidPrincipal: { type: Number, default: 0 },
+  paidInterest: { type: Number, default: 0 },
+  penaltyAmount: { type: Number, default: 0 },
+  paidPenalty: { type: Number, default: 0 },
+  status: { type: String, enum: Object.values(PAYMENT_STATUS), default: 'PENDING' },
+  paidDate: Date,
+  daysOverdue: { type: Number, default: 0 },
+  outstandingAmount: { type: Number, default: 0 }
+}, { timestamps: true });
 
-const InstalmentSchema = new Schema(
-  {
-    loan: { type: Schema.Types.ObjectId, ref: "Loan", required: true },
-    installmentNo: { type: Number, required: true },
+instalmentSchema.pre('save', function(next) {
+  this.outstandingAmount = this.totalAmount + this.penaltyAmount - this.paidAmount - this.paidPenalty;
+  next();
+});
 
-    dueDate: { type: Date, required: true },
-
-    // Due amounts (original schedule)
-    principalDue: { type: Number, default: 0 },
-    interestDue: { type: Number, default: 0 },
-    penaltyDue: { type: Number, default: 0 },
-    totalDue: { type: Number, default: 0 },
-
-    // Remaining amounts (after payments)
-    principalComponent: { type: Number, default: 0 },
-    interestComponent: { type: Number, default: 0 },
-    penaltyComponent: { type: Number, default: 0 },
-
-    outstandingPrincipal: { type: Number, default: 0 },
-
-    // Payment tracking
-    totalPaid: { type: Number, default: 0 },
-    status: {
-      type: String,
-      enum: ["pending", "partial", "paid", "overdue"],
-      default: "pending"
-    },
-    paidAt: { type: Date },
-
-    // Additional charges
-    charges: [InstalmentChargeSchema],
-
-    // Overdue tracking
-    overdueDays: { type: Number, default: 0 },
-    lastPenaltyCalculated: { type: Date },
-
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
-  },
-  { minimize: false }
-);
-
-// Indexes
-InstalmentSchema.index({ loan: 1, installmentNo: 1 }, { unique: true });
-InstalmentSchema.index({ loan: 1, dueDate: 1 });
-InstalmentSchema.index({ status: 1 });
-InstalmentSchema.index({ dueDate: 1, status: 1 });
-
-module.exports = mongoose.model("Instalment", InstalmentSchema);
+module.exports = mongoose.model('Instalment', instalmentSchema);

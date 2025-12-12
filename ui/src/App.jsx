@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
@@ -18,6 +18,7 @@ import LoanDetailsPage from './pages/loan/LoanDetailsPage';
 import LoanCreateWizard from './pages/loans/LoanCreateWizard';
 import DisbursementQueue from './pages/disbursement/DisbursementQueue';
 import DailyCollections from './pages/collections/DailyCollections';
+import SimpleCollections from './pages/collections/SimpleCollections';
 import OverdueBuckets from './pages/collections/OverdueBuckets';
 import CollectionsBoard from './components/ui/CollectionsBoard';
 import LegalCases from './pages/legal/LegalCases';
@@ -46,7 +47,15 @@ const queryClient = new QueryClient({
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const { isAuthenticated, initAuth } = useAuthStore();
+
+  useEffect(() => {
+    const initialize = async () => {
+      await initAuth();
+      setIsLoading(false);
+    };
+    initialize();
+  }, [initAuth]);
 
   if (isLoading) {
     return <LoadingScreen onComplete={() => setIsLoading(false)} />;
@@ -94,7 +103,7 @@ function App() {
               <Route path="/disbursement" element={<ProtectedRoute><DisbursementQueue /></ProtectedRoute>} />
               
               {/* Collections */}
-              <Route path="/collections" element={<ProtectedRoute><DailyCollections /></ProtectedRoute>} />
+              <Route path="/collections" element={<ProtectedRoute><SimpleCollections /></ProtectedRoute>} />
               <Route path="/collections/daily" element={<ProtectedRoute><DailyCollections /></ProtectedRoute>} />
               <Route path="/collections/overdue" element={<ProtectedRoute><OverdueBuckets /></ProtectedRoute>} />
               <Route path="/collections/board" element={<ProtectedRoute><CollectionsBoard /></ProtectedRoute>} />
